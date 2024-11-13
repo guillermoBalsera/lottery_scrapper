@@ -4,3 +4,4 @@ downloads/*
 .venv
 .idea
 /downloader/
+downloader/__pycache__/
