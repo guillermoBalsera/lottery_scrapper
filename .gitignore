@@ -1,7 +1,14 @@
+# Ignore environment files
 .env
-/downloads/
-downloads/*
+
+# Ignore downloads folder and all its subdirectories
+downloads/
+
+# Ignore the virtual environment folder
 .venv
-.idea
-/downloader/
+
+# Ignore editor and IDE-specific settings
+.idea/
+
+# Ignore the downloader folder and all its contents, including __pycache__
 downloader/__pycache__/
