@@ -1,11 +1,11 @@
 import argparse
 from datetime import date
 
-from downloader import download
-from frequencies import calculate
+from services.downloader import download
+from services.frequencies import calculate
 
 MIN_YEAR = 2004
-MAX_YEAR = date.today().year + 1
+MAX_YEAR = date.today().year
 
 
 def get_args():
@@ -22,7 +22,7 @@ def main():
     match action:
         case "download":
             min_year = MIN_YEAR if min_year < MIN_YEAR else min_year
-            max_year = MAX_YEAR if max_year < MAX_YEAR else max_year
+            max_year = MAX_YEAR if max_year > MAX_YEAR else max_year
             download(min_year, max_year)
         case "frequencies":
             calculate()

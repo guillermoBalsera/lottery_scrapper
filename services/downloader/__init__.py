@@ -14,13 +14,13 @@ SPANISH_MONTHS_SHORTCUTS = {
 
 
 def write_data(final_data, year):
-    with open(f"./exports/{year}.json", "w") as file:
+    with open(f"./downloads/{year}.json", "w") as file:
         file.write(json.dumps(final_data))
         print(f"\tData downloaded for year {year}")
 
 
 def transform_row(row, year):
-    Path("./exports").mkdir(parents=True, exist_ok=True)
+    Path("./downloads").mkdir(parents=True, exist_ok=True)
     original_day, original_month = (row[1].split("-"))
     return {
         "lottery": int(row[0].replace("*", "")),
@@ -30,7 +30,7 @@ def transform_row(row, year):
     }
 
 
-def get_data_from_row(year_rows, year):
+def get_data_from_row(year_rows):
     final_data = []
     for row in year_rows:
         row_data = [r.text for r in row.findAll("td") if r.text != ""]
@@ -63,12 +63,12 @@ def get_year_page(year):
 
 
 def download(min_year, max_year):
-    print(f"Going to scrape data from {min_year} to {max_year - 1}\n")
-    for year in range(min_year, max_year):
+    print(f"Going to scrape data from {min_year} to {max_year}\n")
+    for year in range(min_year, max_year + 1):
         data = get_year_page(year)
         beautified_data = BeautifulSoup(data, features="html.parser")
         year_table_rows = get_year_results(beautified_data)
-        result_rows = get_data_from_row(year_table_rows, year)
+        result_rows = get_data_from_row(year_table_rows)
         final_data = []
         for row in result_rows:
             final_data.append(transform_row(row, year))

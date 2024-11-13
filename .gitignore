@@ -1,4 +1,5 @@
 .env
-exports/*
+/downloads/
+downloads/*
 .venv
 .idea
