@@ -1,9 +1,11 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from time import sleep
-import requests
+
 from bs4 import BeautifulSoup
+import importlib
+
+from services.downloader.request import get_page
 
 SPANISH_MONTHS_SHORTCUTS = {
     "ene": 1, "feb": 2, "mar": 3, "abr": 4,
@@ -11,64 +13,43 @@ SPANISH_MONTHS_SHORTCUTS = {
     "sep": 9, "oct": 10, "nov": 11, "dic": 12
 }
 
+SOURCES = {
+    "euromillon": "https://www.euromillones.com.es/historico/resultados-euromillones",
+    "primitiva": "https://www.laprimitiva.info/historico/sorteos-la-primitiva",
+    "gordo_primitiva": "https://www.elgordodelaprimitiva.com.es/gordoprimitiva/sorteos",
+    "bonoloto": "https://www.loteriabonoloto.info/historico-bonoloto/sorteos"
+}
 
-def write_data(final_data, year):
-    with open(f"./downloads/{year}.json", "w", encoding="utf-8") as file:
+
+def write_data(final_data, year, lottery_name):
+    path_name = f"./downloads/{lottery_name}"
+    Path(path_name).mkdir(parents=True, exist_ok=True)
+    with open(f"{path_name}/{year}.json", "w", encoding="utf-8") as file:
         json.dump(final_data, file, ensure_ascii=False, indent=4)
         print(f"\tData downloaded for year {year}")
 
 
-def transform_row(row, year):
-    day, month = row[1].split("-")
-    return {
-        "lottery": int(row[0].replace("*", "")),
-        "date": datetime(year, SPANISH_MONTHS_SHORTCUTS[month], int(day)).isoformat(),
-        "numbers": list(map(int, row[2:7])),
-        "stars": list(map(int, row[7:9]))
-    }
-
-
-def get_data_from_row(year_rows):
-    final_data = []
-    for row in year_rows:
-        row_data = [r.text for r in row.findAll("td") if r.text != ""]
-        if len(row_data) > 2 and "ESTRELLAS" not in row_data and "SORTEO" not in row_data:
-            if len(row_data[-1]) > 7:
-                row_data = row_data[0:-1]
-            if row.find("td", {"class", "nmt"}) or ("SEM." == year_rows[0].find("b").text and len(row_data) == 10):
-                row_data = row_data[1:]
-            if "/" in list(row_data[0]):
-                row_data[0] = row_data[0].split("/")[1]
-            final_data.append(row_data)
-
-    return final_data
-
-
-def get_year_results(data):
-    year_table = data.find("table", {"class": "histoeuro"})
-    return year_table.findAll("tr") if year_table else []
-
-
-def get_year_page(year):
-    url = f"https://www.euromillones.com.es/historico/resultados-euromillones-{year}.html"
-    for attempt in range(10):
-        try:
-            response = requests.get(url)
-            if response.ok:
-                return response.text
-        except requests.RequestException as e:
-            print(f"Request error on {url}: {e}")
-        sleep(1)
-    raise ValueError(f"Failed to fetch data for {year} after 10 attempts")
-
-
 def download(min_year, max_year):
-    Path("./downloads").mkdir(parents=True, exist_ok=True)
     print(f"Starting data scrape from {min_year} to {max_year}\n")
-    for year in range(min_year, max_year + 1):
-        page_content = get_year_page(year)
-        soup = BeautifulSoup(page_content, "html.parser")
-        year_table_rows = get_year_results(soup)
-        result_rows = get_data_from_row(year_table_rows)
-        final_data = [transform_row(row, year) for row in result_rows]
-        write_data(final_data, year)
+    for source, url_template in SOURCES.items():
+        print(f"Processing source: {source}")
+        for year in range(min_year, max_year + 1):
+            page_content = get_page(year, url_template)
+            soup = BeautifulSoup(page_content, "html.parser")
+            try:
+                module = importlib.import_module(f"services.downloader.sources.{source}")
+                get_year_results_function = getattr(module, "get_year_results")
+                year_table_rows = get_year_results_function(soup)
+                get_data_from_row_function = getattr(module, "get_data_from_row")
+                result_rows = get_data_from_row_function(year_table_rows)
+                transform_row_function = getattr(module, "transform_row")
+                final_data = [transform_row_function(row, year) for row in result_rows]
+                write_data(final_data, year, source)
+            except ModuleNotFoundError:
+                print(f"Couldn't find the module for source '{source}'. Skipping.")
+                break
+            except AttributeError:
+                print(f"Couldn't find 'get_year_results' in module '{source}'. Skipping.")
+                break
+            except Exception as e:
+                print(f"An error occurred: {e}")
