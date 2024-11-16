@@ -4,14 +4,14 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-FILES_PATH = './downloads'
+DOWNLOADS = './downloads'
 
 
 def read_files():
-    files = os.listdir(FILES_PATH)
+    files = os.listdir(DOWNLOADS)
     data = []
     for file in files:
-        with open(f"{FILES_PATH}/{file}", 'r') as f:
+        with open(f"{DOWNLOADS}/{file}", 'r') as f:
             data.append(json.load(f))
     return data
 
@@ -25,25 +25,38 @@ def get_numbers_and_stars(lotteries):
             [stars for lottery in lotteries for stars in lottery.get("stars")])
 
 
-def get_number_results(lottery_numbers, lotteries_length):
-    return [{number: {"frequency": frequency, "percentage": round(frequency * 100 / lotteries_length, 2)}}
-            for number, frequency in sorted(Counter(lottery_numbers).items(), key=lambda x: x[1], reverse=True)]
+def get_results(data, lotteries_length, last_appearances):
+    return [
+        {
+            number: {
+                "frequency": frequency,
+                "percentage": round(frequency * 100 / lotteries_length, 2),
+                "last_appearance": last_appearances[number].strftime('%Y-%m-%d')
+            }
+        }
+        for number, frequency in sorted(Counter(data).items(), key=lambda x: x[1], reverse=True)
+    ]
 
 
-def get_star_results(lottery_stars, lotteries_length):
-    return [{star: {"frequency": frequency, "percentage": round(frequency * 100 / lotteries_length, 2)}}
-            for star, frequency in sorted(Counter(lottery_stars).items(), key=lambda x: x[1], reverse=True)]
-
-
-def get_last_dates(lotteries):
-    last_date = {}
+def get_numbers_last_dates(lotteries):
+    last_dates = {}
     for lottery in lotteries:
         lottery_date = datetime.fromisoformat(lottery["date"])
         for number in lottery["numbers"]:
-            if number not in last_date or lottery_date > last_date[number]:
-                last_date[number] = lottery_date
+            if number not in last_dates or lottery_date > last_dates[number]:
+                last_dates[number] = lottery_date
+    return last_dates
 
-    return [{"number": number, "last_date": date.strftime('%Y-%m-%d')} for number, date in last_date.items()]
+
+def get_stars_last_dates(lotteries):
+    last_dates = {}
+    for lottery in lotteries:
+        lottery_date = datetime.fromisoformat(lottery["date"])
+        for number in lottery["stars"]:
+            if number not in last_dates or lottery_date > last_dates[number]:
+                last_dates[number] = lottery_date
+
+    return last_dates
 
 
 def write_results(number_results, star_results, most_probable_combination):
@@ -63,11 +76,12 @@ def calculate():
     lottery_data = read_files()
     lotteries = get_lotteries(lottery_data)
 
-    last_dates = get_last_dates(lotteries)
+    numbers_last_dates = get_numbers_last_dates(lotteries)
+    stars_last_dates = get_stars_last_dates(lotteries)
     lottery_numbers, lottery_stars = get_numbers_and_stars(lotteries)
 
-    numbers_result = get_number_results(lottery_numbers, len(lotteries))
-    stars_result = get_star_results(lottery_stars, len(lotteries))
+    numbers_result = get_results(lottery_numbers, len(lotteries), numbers_last_dates)
+    stars_result = get_results(lottery_stars, len(lotteries), stars_last_dates)
 
     most_probable_combination = {
         "numbers": sorted([list(number.keys())[0] for number in numbers_result[:5]]),
