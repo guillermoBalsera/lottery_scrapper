@@ -14,10 +14,10 @@ SPANISH_MONTHS_SHORTCUTS = {
 }
 
 SOURCES = {
-    "euromillon": "https://www.euromillones.com.es/historico/resultados-euromillones",
+    # "euromillon": "https://www.euromillones.com.es/historico/resultados-euromillones",
     "primitiva": "https://www.laprimitiva.info/historico/sorteos-la-primitiva",
-    "gordo_primitiva": "https://www.elgordodelaprimitiva.com.es/gordoprimitiva/sorteos",
-    "bonoloto": "https://www.loteriabonoloto.info/historico-bonoloto/sorteos"
+    # "gordo_primitiva": "https://www.elgordodelaprimitiva.com.es/gordoprimitiva/sorteos",
+    # "bonoloto": "https://www.loteriabonoloto.info/historico-bonoloto/sorteos"
 }
 
 
@@ -49,7 +49,7 @@ def download(min_year, max_year):
                 print(f"Couldn't find the module for source '{source}'. Skipping.")
                 break
             except AttributeError:
-                print(f"Couldn't find 'get_year_results' in module '{source}'. Skipping.")
+                print(f"Couldn't find function in module '{source}'. Skipping.")
                 break
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"\tAn error occurred {source}, {year}:\n\t\t{e}")

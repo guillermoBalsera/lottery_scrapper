@@ -5,9 +5,10 @@ from services.downloader import SPANISH_MONTHS_SHORTCUTS
 
 def transform_row(row, year):
     day, month = row[1].split("-")
+    lottery_date = datetime(year, SPANISH_MONTHS_SHORTCUTS[month], int(day))
     return {
         "lottery": int(row[0].replace("*", "")),
-        "date": datetime(year, SPANISH_MONTHS_SHORTCUTS[month], int(day)).isoformat(),
+        "date": datetime.strftime(lottery_date, '%Y-%m-%d'),
         "numbers": list(map(int, row[2:7])),
         "stars": list(map(int, row[7:9]))
     }
