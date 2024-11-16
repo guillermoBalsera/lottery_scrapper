@@ -14,25 +14,25 @@ SPANISH_MONTHS_SHORTCUTS = {
 }
 
 SOURCES = {
-    # "euromillon": "https://www.euromillones.com.es/historico/resultados-euromillones",
+    "euromillon": "https://www.euromillones.com.es/historico/resultados-euromillones",
     "primitiva": "https://www.laprimitiva.info/historico/sorteos-la-primitiva",
     # "gordo_primitiva": "https://www.elgordodelaprimitiva.com.es/gordoprimitiva/sorteos",
     # "bonoloto": "https://www.loteriabonoloto.info/historico-bonoloto/sorteos"
 }
 
 
-def write_data(final_data, year, lottery_name):
-    path_name = f"./downloads/{lottery_name}"
+def write_data(final_data, lottery_name):
+    path_name = f"./downloads"
     Path(path_name).mkdir(parents=True, exist_ok=True)
-    with open(f"{path_name}/{year}.json", "w", encoding="utf-8") as file:
+    with open(f"{path_name}/{lottery_name}.json", "w", encoding="utf-8") as file:
         json.dump(final_data, file, ensure_ascii=False, indent=4)
-        print(f"\tData downloaded for year {year}")
 
 
 def download(min_year, max_year):
     print(f"Starting data scrape from {min_year} to {max_year}\n")
     for source, url_template in SOURCES.items():
-        print(f"Processing source: {source}")
+        final_data = []
+        print(f"\nProcessing source: {source}")
         for year in range(min_year, max_year + 1):
             page_content = get_page(year, url_template)
             soup = BeautifulSoup(page_content, "html.parser")
@@ -43,8 +43,8 @@ def download(min_year, max_year):
                 get_data_from_row_function = getattr(module, "get_data_from_row")
                 result_rows = get_data_from_row_function(year_table_rows)
                 transform_row_function = getattr(module, "transform_row")
-                final_data = [transform_row_function(row, year) for row in result_rows]
-                write_data(final_data, year, source)
+                final_data += [transform_row_function(row, year) for row in result_rows]
+                print(f"\tData downloaded for year {year}")
             except ModuleNotFoundError:
                 print(f"Couldn't find the module for source '{source}'. Skipping.")
                 break
@@ -53,3 +53,5 @@ def download(min_year, max_year):
                 break
             except Exception as e:
                 print(f"\tAn error occurred {source}, {year}:\n\t\t{e}")
+        write_data(final_data, source)
+
