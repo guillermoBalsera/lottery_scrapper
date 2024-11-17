@@ -2,66 +2,53 @@ import argparse
 import importlib
 from datetime import date
 
-from bs4 import BeautifulSoup
-
-from services import SOURCES
 from services.file_reader import read_file
 from services.file_writer import write_downloads_data, write_statistics_data
-from services.requests import get_page
 
 MIN_YEAR = 2004
 MAX_YEAR = date.today().year
+
+SOURCES = ["euromillon", "primitiva", "bonoloto", "el_gordo", "eurodreams", "loteria_nacional"]
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--action", type=str, help="Action to carry out")
-    parser.add_argument("-min", "--min_year", type=int, help="First year to download", default=MIN_YEAR)
-    parser.add_argument("-max", "--max_year", type=int, help="Last year to download", default=MAX_YEAR)
     arguments = parser.parse_args()
-    return arguments.action, arguments.min_year, arguments.max_year
+    return arguments.action
 
 
 def main():
-    action, min_year, max_year = get_args()
+    action = get_args()
     match action:
         case "download":
-            min_year = MIN_YEAR if min_year < MIN_YEAR else min_year
-            max_year = MAX_YEAR if max_year > MAX_YEAR else max_year
-            scrape_sources(min_year, max_year)
+            scrape_sources()
         case "statistics":
             calculate_statistics()
         case _:
             raise ValueError("Action not found")
 
 
-def scrape_sources(min_year, max_year):
-    print(f"Starting data scrape from {min_year} to {max_year}\n")
-    for source, url_template in SOURCES.items():
-        final_data = []
+def scrape_sources():
+    print(f"Starting data scrape")
+    for source in SOURCES:
         print(f"Processing source: {source}")
-        for year in range(min_year, max_year + 1):
-            page_content = get_page(year, url_template)
-            soup = BeautifulSoup(page_content, "html.parser")
-            try:
-                module = importlib.import_module(f"services.sources.{source}.scraper")
-                get_year_results_function = getattr(module, "get_year_results")
-                get_data_from_row_function = getattr(module, "get_data_from_row")
-                transform_row_function = getattr(module, "transform_row")
+        try:
+            module = importlib.import_module(f"services.sources.{source}.scraper")
 
-                year_table_rows = get_year_results_function(soup)
-                result_rows = get_data_from_row_function(year_table_rows)
-                final_data += [transform_row_function(row, year) for row in result_rows]
-                print(f"\tData downloaded for year {year}")
-            except ModuleNotFoundError:
-                print(f"Couldn't find the module for source '{source}'. Skipping.")
-                break
-            except AttributeError:
-                print(f"Couldn't find function in module '{source}'. Skipping.")
-                break
-            except Exception as e:
-                print(f"\tAn error occurred while downloading {source}, {year}:\n\t\t{e}")
-        write_downloads_data(final_data, source)
+            for year in range(MIN_YEAR, MAX_YEAR + 1):
+                make_request_function = getattr(module, "make_request")
+                raw_response = make_request_function(year)
+                print(f"\tFound {len(raw_response)} lotteries")
+                # write_downloads_data(raw_response, source)
+        except ModuleNotFoundError:
+            print(f"Couldn't find the module for source '{source}'. Skipping.")
+            break
+        except AttributeError:
+            print(f"Couldn't find function in module '{source}'. Skipping.")
+            break
+        except Exception as e:
+            print(f"\tAn error occurred while downloading {source}:\n\t\t{e}")
 
 
 def calculate_statistics():

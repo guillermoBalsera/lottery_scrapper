@@ -1,6 +1,27 @@
+import json
+import os
+from datetime import date
 from datetime import datetime
 
+from dotenv import load_dotenv
+
 from services import SPANISH_MONTHS_SHORTCUTS
+from services.requests import get_page
+
+MAX_DATE = date.today().year
+
+
+def make_request(year):
+    final_date = datetime(year, 12, 31) if year < MAX_DATE else date.today
+    load_dotenv()
+    url = os.getenv('API_URL')
+    params = {
+        "game_id": "EMIL",
+        "celebrados": True,
+        "fechaInicioInclusiva": datetime(year, 1, 1).strftime('%Y%m%d'),
+        "fechaFinInclusiva":  final_date.strftime('%Y%m%d')
+    }
+    return json.loads(get_page(url, params))
 
 
 def transform_row(row, year):
