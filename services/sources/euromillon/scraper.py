@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from services.downloader import SPANISH_MONTHS_SHORTCUTS
+from services import SPANISH_MONTHS_SHORTCUTS
 
 
 def transform_row(row, year):
