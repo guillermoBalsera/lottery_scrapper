@@ -13,8 +13,7 @@ from services.requests import get_page
 
 MAX_DATE = date.today().year
 
-# SOURCES = ["euromillon", "primitiva", "bonoloto", "gordo-primitiva", "eurodreams", "loteria-nacional"]
-SOURCES = ["loteria-nacional"]
+SOURCES = ["euromillon", "primitiva", "bonoloto", "gordo-primitiva", "eurodreams", "loteria-nacional"]
 
 ERROR_MESSAGE = "No se ha encontrado ningún registro para los parámetros introducidos."
 
