@@ -1,13 +1,13 @@
 import argparse
 import importlib
-from datetime import date
+from datetime import date, datetime
 
 from services.file_reader import read_file
 from services.file_writer import write_downloads_data, write_statistics_data
 
 MIN_YEAR = 2004
-MAX_YEAR = date.today().year
 
+# SOURCES = ["euromillon", "primitiva", "bonoloto", "el_gordo", "eurodreams", "loteria_nacional"]
 SOURCES = ["euromillon", "primitiva", "bonoloto", "el_gordo", "eurodreams", "loteria_nacional"]
 
 
@@ -36,17 +36,25 @@ def scrape_sources():
         try:
             module = importlib.import_module(f"services.sources.{source}.scraper")
 
-            for year in range(MIN_YEAR, MAX_YEAR + 1):
-                make_request_function = getattr(module, "make_request")
-                raw_response = make_request_function(year)
-                print(f"\tFound {len(raw_response)} lotteries")
-                # write_downloads_data(raw_response, source)
+            source_data = []
+
+            for year in range(MIN_YEAR, date.today().year + 1):
+                make_request = getattr(module, "make_request")
+                raw_response = make_request(year)
+                print(f"\tFound {len(raw_response)} lotteries in {year}")
+
+                handle_response = getattr(module, "handle_response")
+                source_data += handle_response(raw_response)
+
+            sorted_data = sorted(source_data, key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d %H:%M:%S"))
+            write_downloads_data(source, sorted_data)
+            print(f"\n\tScraped {len(source_data)} between {MIN_YEAR} and {date.today().year + 1}\n")
         except ModuleNotFoundError:
             print(f"Couldn't find the module for source '{source}'. Skipping.")
             break
-        except AttributeError:
-            print(f"Couldn't find function in module '{source}'. Skipping.")
-            break
+        # except AttributeError:
+        #     print(f"Couldn't find function in module '{source}'. Skipping.")
+        #     break
         except Exception as e:
             print(f"\tAn error occurred while downloading {source}:\n\t\t{e}")
 

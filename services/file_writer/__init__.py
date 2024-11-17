@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-def write_downloads_data(final_data, lottery_name):
+def write_downloads_data(lottery_name, final_data):
     path_name = f"./downloads"
     Path(path_name).mkdir(parents=True, exist_ok=True)
     with open(f"{path_name}/{lottery_name}.json", "w", encoding="utf-8") as file:
