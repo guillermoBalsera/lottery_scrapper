@@ -1,47 +1,32 @@
+import json
+import os
+from datetime import date
 from datetime import datetime
 
-from services import SPANISH_MONTHS_SHORTCUTS
+from dotenv import load_dotenv
 
-SPECIAL_YEARS = [2020]
-
-PREVIOUS_NUMBER = 0
-
-
-def transform_row(row, year):
-    global PREVIOUS_NUMBER
-    if len(row[1].split("/")) == 3:
-        lottery_date = datetime.strptime(row[1], '%d/%m/%Y')
-    else:
-        if year not in SPECIAL_YEARS:
-            row = row if len(row[1].split("/")) < 2 else row[1:]
-            row[0] = row[0].split("/")[1]
-            day, month = row[1].split("-")
-        else:
-            if row[0] != f"{year}":
-                PREVIOUS_NUMBER += 1
-                day, month = row[2].split("-")
-            else:
-                day, month = row[1].split("-")
-        lottery_date = datetime(year, SPANISH_MONTHS_SHORTCUTS[month], int(day))
-    return {
-        "lottery": int(row[0].replace("*", "")) if row[0] != year or year not in SPECIAL_YEARS else PREVIOUS_NUMBER,
-        "date": lottery_date.strftime("%Y-%m-%d"),
-        "numbers": list(map(int, row[2:8])) if row[0] == year or year not in SPECIAL_YEARS else list(map(int, row[3:9])),
-        "complementary": int(row[8]) if row[0] == year or year not in SPECIAL_YEARS else int(row[9]),
-        "refund": int(row[9]) if row[0] == year or year not in SPECIAL_YEARS else int(row[10])
-    }
+from services import WEEK_DAY_EQUIVALENCE
+from services.requests import get_page
 
 
-def get_data_from_row(year_rows):
-    final_data = []
-    for row in year_rows:
-        row_data = [r.text for r in row.findAll("td") if r.text != ""]
-        if len(row_data) > 3 and "SORTEO" not in row_data:
-            final_data.append(row_data)
+def handle_response(raw_response):
+    lotteries = []
+    for raw_lottery in raw_response:
+        original_combination = raw_lottery.get("combinacion").split("C")
+        combination = [int(number) for number in raw_lottery.get("combinacion").split("-")]
+        winner_list = raw_lottery.get("escrutinio")
+        original_revenue = [raw_lottery.get("premios")[:-2], raw_lottery.get("premios")[-2:]]
+        original_collection = [raw_lottery.get("recaudacion")[:-2], raw_lottery.get("recaudacion")[-2:]]
 
-    return final_data
-
-
-def get_year_results(data):
-    year_table = data.find("table", {"class": "histoprimi"})
-    return year_table.findAll("tr") if year_table else []
+        lottery = {
+            "date": raw_lottery.get("fecha_sorteo"),
+            "week_day": WEEK_DAY_EQUIVALENCE[raw_lottery.get("dia_semana").lower()],
+            "numbers": combination[0:5],
+            "stars": combination[5:7],
+            "has_winner": winner_list[0].get("ganadores") != '0',
+            "winners": [int(prize.get("ganadores")) for prize in winner_list if prize.get("ganadores")],
+            "revenue": float(f"{original_revenue[0]}.{original_revenue[1]}"),
+            "earnings": float(f"{original_collection[0]}.{original_collection[1]}")
+        }
+        lotteries.append(lottery)
+    return lotteries

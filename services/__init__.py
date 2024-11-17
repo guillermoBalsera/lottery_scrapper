@@ -18,7 +18,17 @@ SOURCES_MIN_YEARS = {
     "euromillon": 2004,
     "primitiva": 1973,
     "bonoloto": 1988,
-    "el_gordo": 1993,
+    "gordo-primitiva": 1993,
     "eurodreams": 2023,
     "loteria_nacional": 1812,
+}
+
+
+SOURCES_ACRONYMS = {
+    "euromillon": "EMIL",
+    "primitiva": "LAPR",
+    "bonoloto": "BONO",
+    "gordo-primitiva": "ELGR",
+    "eurodreams": "EDMS",
+    "loteria-nacional": "LNA"
 }
