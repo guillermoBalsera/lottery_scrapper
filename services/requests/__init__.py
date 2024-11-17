@@ -11,5 +11,5 @@ def get_page(url, params):
                 return response.text
         except requests.RequestException as e:
             print(f"Request error on {url}: {e}")
-        sleep(1)
+        sleep(0.1)
     raise ValueError(f"Failed to fetch data after 10 attempts")

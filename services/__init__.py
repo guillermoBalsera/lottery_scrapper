@@ -16,7 +16,7 @@ WEEK_DAY_EQUIVALENCE = {
 
 SOURCES_MIN_YEARS = {
     "euromillon": 2004,
-    "primitiva": 1973,
+    "primitiva": 1985,
     "bonoloto": 1988,
     "gordo-primitiva": 1993,
     "eurodreams": 2023,

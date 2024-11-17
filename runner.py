@@ -13,7 +13,10 @@ from services.requests import get_page
 
 MAX_DATE = date.today().year
 
-SOURCES = ["euromillon", "primitiva", "bonoloto", "gordo-primitiva", "eurodreams", "loteria-nacional"]
+# SOURCES = ["euromillon", "primitiva", "bonoloto", "gordo-primitiva", "eurodreams", "loteria-nacional"]
+SOURCES = ["euromillon", "primitiva", "bonoloto"]
+
+ERROR_MESSAGE = "No se ha encontrado ningún registro para los parámetros introducidos."
 
 
 def get_args():
@@ -47,18 +50,22 @@ def scrape_sources():
                 raw_response = make_source_request(year, SOURCES_ACRONYMS[source])
                 print(f"\tFound {len(raw_response): >4} lotteries in {year}")
 
+                if raw_response == ERROR_MESSAGE:
+                    raise YearErrorException()
+
                 handle_response = getattr(module, "handle_response")
                 source_data += handle_response(raw_response)
 
             sorted_data = sorted(source_data, key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d %H:%M:%S"))
             write_downloads_data(source, sorted_data)
-            print(f"\n\tScraped {len(source_data)} between {SOURCES_MIN_YEARS[source]} and {date.today().year + 1}\n")
+            print(f"\n\tScraped {len(source_data)} between {SOURCES_MIN_YEARS[source]} "
+                  f"and {date.today().year + 1} for {source}\n")
+        except YearErrorException:
+            print(f"Incorrect year for source {source}. Skipping\n")
         except ModuleNotFoundError:
-            print(f"Couldn't find the module for source '{source}'. Skipping.")
-            break
+            print(f"Couldn't find the module for source '{source}'. Skipping\n")
         except AttributeError:
-            print(f"Couldn't find function in module '{source}'. Skipping.")
-            break
+            print(f"Couldn't find function in module '{source}'. Skipping\n")
         except Exception as e:
             print(f"\tAn error occurred while downloading {source}:\n\t\t{e}")
 
@@ -103,6 +110,12 @@ def make_source_request(year, acronym):
         "fechaFinInclusiva": final_date.strftime('%Y%m%d')
     }
     return json.loads(get_page(url, params))
+
+
+class YearErrorException(Exception):
+    def __init__(self, message="Year error"):
+        self.message = message
+        super().__init__(self.message)
 
 
 if __name__ == "__main__":
