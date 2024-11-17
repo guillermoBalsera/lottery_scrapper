@@ -14,7 +14,7 @@ from services.requests import get_page
 MAX_DATE = date.today().year
 
 # SOURCES = ["euromillon", "primitiva", "bonoloto", "gordo-primitiva", "eurodreams", "loteria-nacional"]
-SOURCES = ["gordo-primitiva"]
+SOURCES = ["loteria-nacional"]
 
 ERROR_MESSAGE = "No se ha encontrado ningún registro para los parámetros introducidos."
 
@@ -59,7 +59,7 @@ def scrape_sources():
             sorted_data = sorted(source_data, key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d %H:%M:%S"))
             write_downloads_data(source, sorted_data)
             print(f"\n\tScraped {len(source_data)} between {SOURCES_MIN_YEARS[source]} "
-                  f"and {date.today().year + 1} for {source}\n")
+                  f"and {date.today().year} for {source}\n")
         except YearErrorException:
             print(f"Incorrect year for source {source}. Skipping\n")
         except ModuleNotFoundError:
