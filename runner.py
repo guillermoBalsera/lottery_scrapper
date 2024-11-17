@@ -14,7 +14,7 @@ from services.requests import get_page
 MAX_DATE = date.today().year
 
 # SOURCES = ["euromillon", "primitiva", "bonoloto", "gordo-primitiva", "eurodreams", "loteria-nacional"]
-SOURCES = ["euromillon", "primitiva", "bonoloto"]
+SOURCES = ["gordo-primitiva"]
 
 ERROR_MESSAGE = "No se ha encontrado ningún registro para los parámetros introducidos."
 
@@ -38,7 +38,7 @@ def main():
 
 
 def scrape_sources():
-    print(f"Starting data scrape")
+    print(f"Starting data scrape\n")
     for source in SOURCES:
         print(f"Processing source: {source}")
         try:
