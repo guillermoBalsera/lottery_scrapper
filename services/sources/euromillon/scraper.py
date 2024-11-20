@@ -10,6 +10,7 @@ def handle_response(raw_response):
         original_collection = [raw_lottery.get("recaudacion")[:-2], raw_lottery.get("recaudacion")[-2:]]
 
         lottery = {
+            "source": raw_lottery.get("game_id"),
             "date": raw_lottery.get("fecha_sorteo"),
             "week_day": WEEK_DAY_EQUIVALENCE[raw_lottery.get("dia_semana").lower()],
             "numbers": combination[0:5],

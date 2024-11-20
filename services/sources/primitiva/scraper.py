@@ -15,6 +15,7 @@ def handle_response(raw_response):
             if raw_lottery.get("recaudacion") else [0, 0]
 
         lottery = {
+            "source": raw_lottery.get("game_id"),
             "date": raw_lottery.get("fecha_sorteo"),
             "week_day": WEEK_DAY_EQUIVALENCE[raw_lottery.get("dia_semana").lower()],
             "numbers": [int(number) for number in numbers],

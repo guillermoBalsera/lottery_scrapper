@@ -57,7 +57,7 @@ def scrape_sources():
 
             sorted_data = sorted(source_data, key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d %H:%M:%S"))
             write_downloads_data(source, sorted_data)
-            print(f"\n\tScraped {len(source_data)} between {SOURCES_MIN_YEARS[source]} "
+            print(f"\n\tScraped {len(source_data)} between {SOURCES_MIN_YEARS[source]}"
                   f"and {date.today().year} for {source}\n")
         except YearErrorException:
             print(f"Incorrect year for source {source}. Skipping\n")
