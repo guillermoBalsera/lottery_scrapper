@@ -1,6 +1,7 @@
 import argparse
 import importlib
 import json
+import logging
 import os
 from datetime import date, datetime
 
@@ -9,6 +10,7 @@ from dotenv import load_dotenv
 from services import SOURCES_MIN_YEARS, SOURCES_ACRONYMS
 from services.file_reader import read_file
 from services.file_writer import write_downloads_data, write_statistics_data
+from services.logger import set_logging
 from services.requests import get_page
 
 MAX_DATE = date.today().year
@@ -26,6 +28,8 @@ def get_args():
 
 
 def main():
+    set_logging()
+
     action = get_args()
     match action:
         case "download":
@@ -37,9 +41,9 @@ def main():
 
 
 def scrape_sources():
-    print(f"Starting data scrape\n")
+    logging.info(f"Starting data scrape")
     for source in SOURCES:
-        print(f"Processing source: {source}")
+        logging.info(f"Processing source: {source}")
         try:
             module = importlib.import_module(f"services.sources.{source}.scraper")
 
@@ -47,7 +51,7 @@ def scrape_sources():
 
             for year in range(SOURCES_MIN_YEARS[source], date.today().year + 1):
                 raw_response = make_source_request(year, SOURCES_ACRONYMS[source])
-                print(f"\tFound {len(raw_response): >4} lotteries in {year}")
+                logging.info(f"\tFound {len(raw_response): >4} lotteries in {year}")
 
                 if raw_response == ERROR_MESSAGE:
                     raise YearErrorException()
@@ -57,22 +61,21 @@ def scrape_sources():
 
             sorted_data = sorted(source_data, key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d %H:%M:%S"))
             write_downloads_data(source, sorted_data)
-            print(f"\n\tScraped {len(source_data)} between {SOURCES_MIN_YEARS[source]}"
-                  f" and {date.today().year} for {source}\n")
+            logging.info(f"Scraped {len(source_data)} between {SOURCES_MIN_YEARS[source]} and {date.today().year} for {source}\n")
         except YearErrorException:
-            print(f"Incorrect year for source {source}. Skipping\n")
+            logging.warning(f"Incorrect year for source {source}. Skipping\n")
         except ModuleNotFoundError:
-            print(f"Couldn't find the module for source '{source}'. Skipping\n")
+            logging.warning(f"Couldn't find the module for source '{source}'. Skipping\n")
         except AttributeError:
-            print(f"Couldn't find function in module '{source}'. Skipping\n")
+            logging.warning(f"Couldn't find function in module '{source}'. Skipping\n")
         except Exception as e:
-            print(f"\tAn error occurred while downloading {source}:\n\t\t{e}")
+            logging.error(f"\tAn error occurred while downloading {source}: {e}")
 
 
 def calculate_statistics():
-    print("\nStarting to calculate data")
+    logging.info("\nStarting to calculate data")
     for source in SOURCES:
-        print(f"\nCalculating statistics for {source}")
+        logging.info(f"\nCalculating statistics for {source}")
         try:
             module = importlib.import_module(f"services.sources.{source}.statistics")
             get_frequencies_function = getattr(module, "get_frequencies")
@@ -87,15 +90,12 @@ def calculate_statistics():
             source_yearly_trends = get_yearly_trends_function(lottery_data)
             source_even_odd = get_even_odd_function(lottery_data)
             write_statistics_data(source, yearly_trends=source_yearly_trends)
-        #       , pairs=source_pairs, even_odd=source_even_odd, frequencies=source_frequencies,
         except ModuleNotFoundError:
-            print(f"Couldn't find the module for source '{source}'. Skipping.")
-            break
+            logging.warning(f"Couldn't find the module for source '{source}'. Skipping.")
         except AttributeError:
-            print(f"Couldn't find function in module '{source}'. Skipping.")
-            break
+            logging.warning(f"Couldn't find function in module '{source}'. Skipping.")
         except Exception as e:
-            print(f"\tAn error occurred while calculating statistics {source}: \n\t\t{e}")
+            logging.error(f"\tAn error occurred while calculating statistics for {source}: {e}")
 
 
 def make_source_request(year, acronym):
