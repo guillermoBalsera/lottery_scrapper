@@ -1,12 +1,14 @@
 import logging
 from datetime import datetime
+from pathlib import Path
 
 
 def set_logging():
     log_format = '%(levelname)s - %(message)s'
 
+    Path(f"./logs").mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
-        filename=f'{datetime.now().strftime("%Y%m%d%H%M")}.log',
+        filename=f'./logs/{datetime.now().strftime("%Y%m%d%H%M%S")}.log',
         level=logging.INFO,
         format=log_format
     )

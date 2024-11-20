@@ -51,7 +51,7 @@ def scrape_sources():
 
             for year in range(SOURCES_MIN_YEARS[source], date.today().year + 1):
                 raw_response = make_source_request(year, SOURCES_ACRONYMS[source])
-                logging.info(f"\tFound {len(raw_response): >4} lotteries in {year}")
+                logging.info(f"\tFound {len(raw_response): >3} lotteries in {year}")
 
                 if raw_response == ERROR_MESSAGE:
                     raise YearErrorException()
